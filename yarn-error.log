@@ -1,0 +1,48 @@
+Arguments: 
+  /usr/local/Cellar/node/10.0.0/bin/node /usr/local/bin/yarn server
+
+PATH: 
+  /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/cburger/Library/Android/sdk/emulator:/Users/cburger/Library/Android/sdk/platform-tools:/Users/cburger/Library/Android/sdk/emulator:/Users/cburger/Library/Android/sdk/platform-tools
+
+Yarn version: 
+  1.17.0
+
+Node version: 
+  10.16.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  SyntaxError: /Users/cburger/Documents/github/PUBG-node/package.json: Unexpected token } in JSON at position 419
+      at JSON.parse (<anonymous>)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:1625:59
+      at Generator.next (<anonymous>)
+      at step (/usr/local/lib/node_modules/yarn/lib/cli.js:304:30)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:315:13
+
+npm manifest: 
+  {
+    "name": "pubg-node",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "myScript": "node -e 'require(\"./index.js\").someFunction()'",
+      "server": "http-server"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "data-store": "^3.1.0",
+      "node-persist": "^3.0.5"
+    },
+    "proxy": "http://localhost:3000",
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
