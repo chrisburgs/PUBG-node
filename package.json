@@ -17,6 +17,7 @@
     "axios": "^0.19.0",
     "circular-json": "^0.5.9",
     "data-store": "^3.1.0",
+    "dotenv": "^8.0.0",
     "node-persist": "^3.0.5"
   },
   "devDependencies": {

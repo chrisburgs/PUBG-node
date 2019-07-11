@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const pino = require('express-pino-logger')();
 const JSON = require('circular-json');
+require('dotenv').config()
 
 const axios = require("axios");
 
@@ -14,13 +15,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(pino);
 
 
-
+// console.log('process-------', process.env.DB_HOST)
 app.get('/seasons', async (req, res) => {
   try {
     const response = await axios.get('https://api.pubg.com/shards/steam/seasons',{
       headers: {
         Accept: "application/vnd.api+json",
         Authorization:
+          `Bearer ${process.env.apikey}`
       }
     });
     const data = response;
@@ -33,15 +35,19 @@ app.get('/seasons', async (req, res) => {
 
 
 
-app.get('/seasons', async (req, res) => {
+app.get('/player', async (req, res) => {
   try {
-    const response = await axios.get('https://api.pubg.com/shards/steam/seasons',{
+    console.log('----------------')
+    console.log('player', req.query.playerName)
+    console.log('----------------')
+    const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${req.query.playerName}`,{
       headers: {
         Accept: "application/vnd.api+json",
         Authorization:
+        `Bearer ${process.env.apikey}`
       }
     });
-    const data = response;
+    store.set(`playerData-${req.query.playerName}`, JSON.stringify(response.data.data))
     res.setHeader('Content-Type', 'application/vnd.api+json');
     res.send(JSON.stringify(response.data.data));
   } catch (error) {
