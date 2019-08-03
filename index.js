@@ -74,26 +74,24 @@ app.get("/matches", async (req, res) => {
 			}
 		})
 		matches.push({ ...response.data, matchId: matchId })
-//left off moving this chunk into the loop to set key of playerMatchData instead of array
-		matchesReduced = matches.map(match => ({
+	}
+	let matchesReduced = {}
+	matches.forEach(match => matchesReduced[match.data.id] = {
 			attributes: match.data.attributes,
-			matchId: matchId,
 			stats: match.included.map(players => players.type == "participant" && players)
 			.filter(player =>
 				player && player.attributes.stats.name == req.query.playerName
 			),
 			asset: match.included.filter(inc => inc.type == "asset")
-		}))
-		matchesReduced = matchesReduced
-		console.log( "wut is : ", matchesReduced)
-		store.set(`playerData-${req.query.playerName}`, {
-			...storeData,
-			playerMatchData: { ...storeData.playerMatchData, matchesReduced }
-		})
-//
-	}
-    
-    res.setHeader("Content-Type", "application/vnd.api+json");
+		}
+	)
+
+	store.set(`playerData-${req.query.playerName}`, {
+		...storeData,
+		playerMatchData: { ...storeData.playerMatchData,  matchesReduced }
+	})
+	
+	res.setHeader("Content-Type", "application/vnd.api+json");
     res.send(matchesReduced);
 	} catch (error) {
 		console.log(error);
