@@ -158,7 +158,17 @@ app.get('/telemetry', async (req, res) => {
 		})
 		let data = response.data
 		data = data.filter(data => data.character && data.character.name == req.query.playerName)
-		res.send(data)
+		
+		
+		let location
+		if (req.query.telemetryFilter.includes('location')){
+			location = data.map(data => data.character.location)
+		}
+
+		
+
+
+		res.send(location)
 	} catch (error) {
     console.log(error)
   }
