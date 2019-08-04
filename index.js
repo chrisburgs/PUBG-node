@@ -105,18 +105,16 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
     let playerData = [], data = []
     let response
     for (query of accountList) {
-		response = await axios.get(`https://api.pubg.com/shards/steam/seasons/${req.query.season}/gameMode/${req.query.gameMode}/players?filter[playerIds]=${query}`,
-        {
-			headers: {
-				Accept: "application/vnd.api+json",
-            	Authorization: `Bearer ${process.env.apikey}`
-          	},
-			validateStatus: function(status) {
-				return (status >= 200 && status <= 300) || status == 429 // default
-			}
-		}
-      )
-      response.status != 429 ? data.push(response.data.data) : null
+			response = await axios.get(`https://api.pubg.com/shards/steam/seasons/${req.query.season}/gameMode/${req.query.gameMode}/players?filter[playerIds]=${query}`, {
+				headers: {
+					Accept: "application/vnd.api+json",
+					Authorization: `Bearer ${process.env.apikey}`
+				},
+				validateStatus: function(status) {
+					return (status >= 200 && status <= 300) || status == 429 // default
+				}
+			})
+			response.status != 429 ? data.push(response.data.data) : null
     }
     data = [].concat(...data)
     data = data.map(data => data.attributes.gameModeStats[req.query.gameMode])
@@ -130,7 +128,7 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 
 async function getAccountList(matchId) {
 	let splicedList = [];
-	query = `https://api.pubg.com/shards/steam/matches/5f4807fa-562c-4a09-854c-b6b9aa473622`;
+	query = `https://api.pubg.com/shards/steam/matches/b940db1c-d0e8-4ee4-a7b6-7ebc8c0e69f9`;
 	response = await axios.get(query, {
 		headers: {
 			Accept: "application/vnd.api+json"
@@ -149,11 +147,19 @@ app.get("/clear", (req, res) => {
   res.send(JSON.stringify({ ...store.data }))
 })
 
-app.get('/telemetryTest', async (req, res) => {
+app.get('/telemetry', async (req, res) => {
 	try {
-	let response = axios.get({
-	})
-  } catch (error) {
+		let storeData = store.get(`playerData-${req.query.playerName}`)
+		let telemetryURL = storeData.playerMatchData.matchesReduced['195e298d-5f23-48e7-8d58-ae493f9aa671'].asset[0].attributes.URL
+		let response = await axios.get(telemetryURL, {
+			headers: {
+				'Accept-Encoding': 'gzip'
+			}
+		})
+		let data = response.data
+		data = data.filter(data => data.character && data.character.name == req.query.playerName)
+		res.send(data)
+	} catch (error) {
     console.log(error)
   }
 })
