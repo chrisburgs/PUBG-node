@@ -147,7 +147,7 @@ app.get("/clear", (req, res) => {
   res.send(JSON.stringify({ ...store.data }))
 })
 
-app.get('/telemetry', async (req, res) => {
+app.get('/rawTelemetry', async (req, res) => {
 	try {
 		let storeData = store.get(`playerData-${req.query.playerName}`)
 		let telemetryURL = storeData.playerMatchData.matchesReduced['195e298d-5f23-48e7-8d58-ae493f9aa671'].asset[0].attributes.URL
@@ -157,18 +157,20 @@ app.get('/telemetry', async (req, res) => {
 			}
 		})
 		let data = response.data
-		data = data.filter(data => data.character && data.character.name == req.query.playerName)
-		
-		
-		let location
-		if (req.query.telemetryFilter.includes('location')){
-			location = data.map(data => data.character.location)
+		// data = data.filter(data => data.character && data.character.name == req.query.playerName)
+				
+		// let location
+		// if (req.query.telemetryFilter.includes('location')){
+		// 	location = data.map(data => data.character.location)
+		// }
+		let dataTypes = {}
+		for (q in req.query.logType) {
+			let logType = req.query.logType[q]
+			dataTypes[logType] = data.filter(data => data._T == logType)
 		}
+		!!req.query.logType.length ? dataTypes = data : null
 
-		
-
-
-		res.send(location)
+		res.send(dataTypes)
 	} catch (error) {
     console.log(error)
   }
