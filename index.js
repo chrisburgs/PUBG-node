@@ -149,6 +149,7 @@ app.get("/clear", (req, res) => {
 
 app.get('/rawTelemetry', async (req, res) => {
 	try {
+		let logTypes = require('./logTypes')
 		let storeData = store.get(`playerData-${req.query.playerName}`)
 		let telemetryURL = storeData.playerMatchData.matchesReduced['195e298d-5f23-48e7-8d58-ae493f9aa671'].asset[0].attributes.URL
 		let response = await axios.get(telemetryURL, {
@@ -157,20 +158,23 @@ app.get('/rawTelemetry', async (req, res) => {
 			}
 		})
 		let data = response.data
-		// data = data.filter(data => data.character && data.character.name == req.query.playerName)
+		data = data.filter(data => data.character && data.character.name == req.query.playerName)
 				
-		// let location
-		// if (req.query.telemetryFilter.includes('location')){
-		// 	location = data.map(data => data.character.location)
-		// }
+		let logTypeQuery
 		let dataTypes = {}
-		for (q in req.query.logType) {
-			let logType = req.query.logType[q]
-			dataTypes[logType] = data.filter(data => data._T == logType)
+		if (req.query.logType && !!req.query.logType.length) {
+			for (q in req.query.logType) {
+				logTypeQuery = req.query.logType[q]
+				dataTypes[logTypeQuery] = data.filter(data => data._T == logTypeQuery)
+			}
 		}
-		!!req.query.logType.length ? dataTypes = data : null
+		else {
+			for (logType in logTypes) {
+				dataTypes[logTypes[logType]] = data.filter(data => data._T == logTypes[logType])
+			}
+		}
 
-		res.send(dataTypes)
+		res.send(JSON.stringify(dataTypes))
 	} catch (error) {
     console.log(error)
   }
