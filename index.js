@@ -157,9 +157,11 @@ app.get('/rawTelemetry', async (req, res) => {
 				'Accept-Encoding': 'gzip'
 			}
 		})
+
 		let data = response.data
-		data = data.filter(data => data.character && data.character.name == req.query.playerName)
-				
+
+		data = req.query.filterByPlayer ? data.filter(data => data.character && data.character.name == req.query.playerName) : data
+
 		let logTypeQuery
 		let dataTypes = {}
 		if (req.query.logType && !!req.query.logType.length) {
