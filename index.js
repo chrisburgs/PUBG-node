@@ -10,6 +10,9 @@ const Store = require("data-store")
 const store = new Store({
 	path: "config.json"
 })
+const tempStore = new Store({
+	path: "tempConfig.json"
+})
 
 const app = express()
 app.use(bodyParser.urlencoded({
@@ -37,25 +40,21 @@ app.get("/seasons", async (req, res) => {
 
 app.get("/player", async (req, res) => {
 	try {
-		if (store.get(`playerData-${req.query.playerName}`) != null) {
-			res.send(store.get(`playerData-${req.query.playerName}`))
-		} else {
-			const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${req.query.playerName}`, {
-				headers: {
-					Accept: "application/vnd.api+json",
-					Authorization: `Bearer ${process.env.apikey}`
-				}
-			})
-			let cleanResponse = response.data.data[0]
-			let matchIds = cleanResponse
-			store.set(`playerData-${req.query.playerName}`, {
-				accountId: cleanResponse.id,
-				...cleanResponse.attributes,
-				matches: cleanResponse.relationships.matches.data
-			})
-			res.setHeader("Content-Type", "application/vnd.api+json")
-			res.send(store.get("playerData-${req.query.playerName}"))
-		}
+	
+		const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${req.query.playerName}`, {
+			headers: {
+				Accept: "application/vnd.api+json",
+				Authorization: `Bearer ${process.env.apikey}`
+			}
+		})
+		let cleanResponse = response.data.data[0]
+		store.set(`playerData-${req.query.playerName}`, {
+			accountId: cleanResponse.id,
+			...cleanResponse.attributes,
+			matches: cleanResponse.relationships.matches.data
+		})
+		res.setHeader("Content-Type", "application/vnd.api+json")
+		res.send(store.get("playerData-${req.query.playerName}"))
 	} catch (error) {
 		console.log(error)
 	}
