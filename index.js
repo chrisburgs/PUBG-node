@@ -54,7 +54,7 @@ app.get("/player", async (req, res) => {
 			matches: cleanResponse.relationships.matches.data
 		})
 		res.setHeader("Content-Type", "application/vnd.api+json")
-		res.send(store.get("playerData-${req.query.playerName}"))
+		res.send(store.get(`playerData-${req.query.playerName}`))
 	} catch (error) {
 		console.log(error)
 	}
