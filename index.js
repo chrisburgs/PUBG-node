@@ -34,13 +34,13 @@ app.get("/seasons", async (req, res) => {
 		res.setHeader("Content-Type", "application/vnd.api+json")
 		res.send(JSON.stringify(response.data.data))
 	} catch (error) {
-		console.log(error)
+		console.log('seasons error', error)
 	}
 })
 
 app.get("/player", async (req, res) => {
 	try {
-	
+
 		const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${req.query.playerName}`, {
 			headers: {
 				Accept: "application/vnd.api+json",
@@ -56,7 +56,7 @@ app.get("/player", async (req, res) => {
 		res.setHeader("Content-Type", "application/vnd.api+json")
 		res.send(store.get(`playerData-${req.query.playerName}`))
 	} catch (error) {
-		console.log(error)
+		console.log('player error', error)
 	}
 })
 
@@ -83,6 +83,7 @@ app.get("/matches", async (req, res) => {
 		matches = matches.sort((a, b) => a.data.attributes.createdAt > b.data.attributes.createdAt)
 		let matchesReduced = {}
 		matches.forEach(match => matchesReduced[match.data.id] = {
+			matchId: match.matchId,
 			attributes: match.data.attributes,
 			stats: match.included.map(players => players.type == "participant" && players)
 				.filter(player =>
@@ -92,12 +93,10 @@ app.get("/matches", async (req, res) => {
 		})
 		store.set(`playerData-${req.query.playerName}.matchesReduced`, matchesReduced)
 
-
-
 		res.setHeader("Content-Type", "application/vnd.api+json");
 		res.send(matchesReduced);
 	} catch (error) {
-		console.log(error);
+		console.log('matches error', error);
 	}
 });
 
@@ -108,6 +107,7 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 		let playerData = [],
 			data = []
 		let response
+		
 		for (query of accountList) {
 			response = await axios.get(`https://api.pubg.com/shards/steam/seasons/${req.query.season}/gameMode/${req.query.gameMode}/players?filter[playerIds]=${query}`, {
 				headers: {
@@ -122,17 +122,16 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 		}
 		data = [].concat(...data)
 		data = data.map(data => data.attributes.gameModeStats[req.query.gameMode])
-		console.log('data: ', data)
 		res.setHeader("Content-Type", "application/vnd.api+json")
 		res.send(data)
 	} catch (error) {
-		console.log(error)
+		console.log('bulk player stats error', error)
 	}
 })
 
 async function getAccountList(matchId) {
 	let splicedList = [];
-	query = `https://api.pubg.com/shards/steam/matches/b940db1c-d0e8-4ee4-a7b6-7ebc8c0e69f9`;
+	query = `https://api.pubg.com/shards/steam/matches/${matchId}`;
 	response = await axios.get(query, {
 		headers: {
 			Accept: "application/vnd.api+json"
@@ -183,7 +182,7 @@ app.get('/rawTelemetry', async (req, res) => {
 
 		res.send(JSON.stringify(dataTypes))
 	} catch (error) {
-		console.log(error)
+		console.log("telelemetry error", error)
 	}
 })
 app.listen(3001, () =>
