@@ -63,6 +63,7 @@ app.get("/player", async (req, res) => {
 app.get("/matches", async (req, res) => {
 	try {
 		let storeData = store.get(`playerData-${req.query.playerName}`)
+		// DO OBJECT DESCTRUCTURING HERE FOR QUERY PARAMS
 		let rangeStart = req.query.rangeStart
 		let rangeEnd = req.query.rangeEnd
 		let query, matchId, response, matches = []
@@ -104,11 +105,14 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 	try {
 		let storeData = store.get(`playerData-${req.query.playerName}`)
 		let accountList = await getAccountList(req.query.matchId)
-		let playerData = [],
-			data = []
+		let data = [],
+			accountIdList = []
+			splicedList = []
 		let response
-		
-		for (query of accountList) {
+		let matchesAsArray = Object.keys(accountList).forEach(key => accountIdList.push(key));
+		while (accountIdList.length)
+			splicedList.push(accountIdList.splice(0, 10).join("%2C"))
+		for (query of splicedList) {
 			response = await axios.get(`https://api.pubg.com/shards/steam/seasons/${req.query.season}/gameMode/${req.query.gameMode}/players?filter[playerIds]=${query}`, {
 				headers: {
 					Accept: "application/vnd.api+json",
@@ -121,14 +125,18 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 			response.status != 429 ? data.push(response.data.data) : null
 		}
 		data = [].concat(...data)
-		data = data.map(data => data.attributes.gameModeStats[req.query.gameMode])
+		data = data.map(data => 
+			{data.attributes.gameModeStats[req.query.gameMode],
+			data.relationships.player.data.id}
+		)
+		store.set('h', data)
 		res.setHeader("Content-Type", "application/vnd.api+json")
-		res.send(data)
+		res.send({data, accountList})
 	} catch (error) {
 		console.log('bulk player stats error', error)
 	}
 })
-
+//relationships.player.data.id
 async function getAccountList(matchId) {
 	let splicedList = [];
 	query = `https://api.pubg.com/shards/steam/matches/${matchId}`;
@@ -138,11 +146,11 @@ async function getAccountList(matchId) {
 		}
 	})
 	let accountList = response.data.included.filter(inc => inc.type == "participant")
-	accountList = accountList.map(player => player.attributes.stats.playerId)
-	while (accountList.length) {
-		splicedList.push(accountList.splice(0, 10).join("%2C"))
-	}
-	return splicedList
+	let playersList = {}
+	accountList.forEach(player => 
+		playersList[player.attributes.stats.playerId] = player.attributes.stats.name
+	)
+	return playersList
 }
 
 app.get("/clear", (req, res) => {
