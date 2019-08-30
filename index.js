@@ -125,11 +125,10 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 			response.status != 429 ? data.push(response.data.data) : null
 		}
 		data = [].concat(...data)
-		data = data.map(data => 
-			{data.attributes.gameModeStats[req.query.gameMode],
-			data.relationships.player.data.id}
-		)
-		store.set('h', data)
+		data = data.map(data => players = {
+			stats: data.attributes.gameModeStats[req.query.gameMode],
+			playerIds: data.relationships.player.data.id
+		})
 		res.setHeader("Content-Type", "application/vnd.api+json")
 		res.send({data, accountList})
 	} catch (error) {
