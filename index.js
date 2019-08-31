@@ -63,11 +63,9 @@ app.get("/player", async (req, res) => {
 app.get("/matches", async (req, res) => {
 	try {
 		let storeData = store.get(`playerData-${req.query.playerName}`)
-		// DO OBJECT DESCTRUCTURING HERE FOR QUERY PARAMS
-		let rangeStart = req.query.rangeStart
-		let rangeEnd = req.query.rangeEnd
+		const { rangeStart, rangeEnd, playerName } = req.query
 		let query, matchId, response, matches = []
-		let accountId = store.get(`playerData-${req.query.playerName}`)
+		let accountId = store.get(`playerData-${playerName}`)
 		for (let i = rangeStart; i <= rangeEnd; i++) {
 			matchId = storeData.matches[i].id
 			query = `https://api.pubg.com/shards/steam/matches/${matchId}`
@@ -92,6 +90,7 @@ app.get("/matches", async (req, res) => {
 				),
 			asset: match.included.filter(inc => inc.type == "asset")
 		})
+
 		store.set(`playerData-${req.query.playerName}.matchesReduced`, matchesReduced)
 
 		res.setHeader("Content-Type", "application/vnd.api+json");
@@ -125,10 +124,18 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 			response.status != 429 ? data.push(response.data.data) : null
 		}
 		data = [].concat(...data)
-		data = data.map(data => players = {
-			stats: data.attributes.gameModeStats[req.query.gameMode],
-			playerIds: data.relationships.player.data.id
+		data = data.map(data => {
+			let playerStats = data.attributes.gameModeStats[req.query.gameMode]
+			return (
+				players = {
+					stats: {
+						...playerStats,
+						kd: playerStats.kills/playerStats.roundsPlayed
+					},
+					playerIds: data.relationships.player.data.id
+			})
 		})
+		store.set('qwer', {data, accountList})
 		res.setHeader("Content-Type", "application/vnd.api+json")
 		res.send({data, accountList})
 	} catch (error) {
@@ -161,9 +168,10 @@ app.get("/clear", (req, res) => {
 
 app.get('/rawTelemetry', async (req, res) => {
 	try {
+		const { matchId, playerName } = req.query
 		let logTypes = require('./logTypes')
-		let storeData = store.get(`playerData-${req.query.playerName}`)
-		let telemetryURL = storeData.playerMatchData.matchesReduced['195e298d-5f23-48e7-8d58-ae493f9aa671'].asset[0].attributes.URL
+		let storeData = store.get(`playerData-${playerName}`)
+		let telemetryURL = storeData.matchesReduced[matchId].asset[0].attributes.URL
 		let response = await axios.get(telemetryURL, {
 			headers: {
 				'Accept-Encoding': 'gzip'
@@ -171,7 +179,7 @@ app.get('/rawTelemetry', async (req, res) => {
 		})
 
 		let data = response.data
-
+		
 		data = req.query.filterByPlayer ? data.filter(data => data.character && data.character.name == req.query.playerName) : data
 
 		let logTypeQuery
