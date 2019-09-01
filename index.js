@@ -38,32 +38,46 @@ app.get("/seasons", async (req, res) => {
 	}
 })
 
+
+async function individualPlayer(playerName) {
+
+	const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${playerName}`, {
+		headers: {
+			Accept: "application/vnd.api+json",
+			Authorization: `Bearer ${process.env.apikey}`
+		}
+	})
+	let cleanResponse = response.data.data[0]
+	store.set(`playerData-${req.query.playerName}`, {
+		accountId: cleanResponse.id,
+		...cleanResponse.attributes,
+		matches: cleanResponse.relationships.matches.data
+	})
+}
+
 app.get("/player", async (req, res) => {
 	try {
-
-		const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${req.query.playerName}`, {
-			headers: {
-				Accept: "application/vnd.api+json",
-				Authorization: `Bearer ${process.env.apikey}`
-			}
-		})
-		let cleanResponse = response.data.data[0]
-		store.set(`playerData-${req.query.playerName}`, {
-			accountId: cleanResponse.id,
-			...cleanResponse.attributes,
-			matches: cleanResponse.relationships.matches.data
-		})
+		const { playerName } = req.query
+		individualPlayer(playerName)
 		res.setHeader("Content-Type", "application/vnd.api+json")
-		res.send(store.get(`playerData-${req.query.playerName}`))
+		res.send(store.get(`playerData-${playerName}`))
 	} catch (error) {
 		console.log('player error', error)
 	}
 })
 
+function differenceMinutes(timeA, timeB) {
+	return (timeA - timeB) / 60000
+}
+
 app.get("/matches", async (req, res) => {
 	try {
-		let storeData = store.get(`playerData-${req.query.playerName}`)
 		const { rangeStart, rangeEnd, playerName } = req.query
+		let storeData = store.get(`playerData-${playerName}`)
+		if (differenceMinutes(Date.now(), Date.parse(storeData.createdAt)) > 5) {
+			individualPlayer(playerName)
+			storeData = store.get(`playerData-${playerName}`)
+		}
 		let query, matchId, response, matches = []
 		let accountId = store.get(`playerData-${playerName}`)
 		for (let i = rangeStart; i <= rangeEnd; i++) {
@@ -87,7 +101,7 @@ app.get("/matches", async (req, res) => {
 			stats: match.included.map(players => players.type == "participant" && players)
 				.filter(player =>
 					player && player.attributes.stats.name == req.query.playerName
-				),
+			),
 			asset: match.included.filter(inc => inc.type == "asset")
 		})
 
