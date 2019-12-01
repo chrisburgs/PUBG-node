@@ -40,7 +40,7 @@ app.get("/seasons", async (req, res) => {
 
 
 async function individualPlayer(playerName) {
-
+	
 	const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${playerName}`, {
 		headers: {
 			Accept: "application/vnd.api+json",
@@ -48,7 +48,7 @@ async function individualPlayer(playerName) {
 		}
 	})
 	let cleanResponse = response.data.data[0]
-	store.set(`playerData-${req.query.playerName}`, {
+	store.set(`playerData-${playerName}`, {
 		accountId: cleanResponse.id,
 		...cleanResponse.attributes,
 		matches: cleanResponse.relationships.matches.data
