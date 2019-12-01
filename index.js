@@ -19,9 +19,27 @@ app.use(bodyParser.urlencoded({
 	extended: false
 }))
 app.use(pino)
+//2019-12-01T02:38:00Z
+
+//util?
+function differenceMinutes(timeA, timeB) {
+	return (timeA - timeB) / 60000
+}
+
+//util?
+function checkExpired(obj, expirationTime) {
+	return obj && obj.lastUpdatedAt && differenceMinutes(Date.now(), obj.lastUpdatedAt) < expirationTime
+}
+
 
 app.get("/seasons", async (req, res) => {
 	try {
+		let seasons = store.get('seasons')
+		if (seasons && seasons.lastUpdatedAt && differenceMinutes(Date.now(), seasons.lastUpdatedAt) < 60) {
+			console.log('we already had seasons')
+			res.setHeader("Content-Type", "application/vnd.api+json")
+			res.send(JSON.stringify(seasons.seasons))
+		}
 		const response = await axios.get(
 			"https://api.pubg.com/shards/steam/seasons", {
 				headers: {
@@ -33,13 +51,20 @@ app.get("/seasons", async (req, res) => {
 		const data = response
 		res.setHeader("Content-Type", "application/vnd.api+json")
 		res.send(JSON.stringify(response.data.data))
+		store.set(`seasons`, {
+			lastUpdatedAt: Date.now(),
+			seasons: response.data.data
+		})
 	} catch (error) {
 		console.log('seasons error', error)
 	}
 })
 
 
+
 async function individualPlayer(playerName) {
+	let player = store.get(`playerData-${playerName}`)
+	return checkExpired(player, 5)
 	
 	const response = await axios.get(`https://api.pubg.com/shards/steam/players?filter[playerNames]=${playerName}`, {
 		headers: {
@@ -48,7 +73,9 @@ async function individualPlayer(playerName) {
 		}
 	})
 	let cleanResponse = response.data.data[0]
+	
 	store.set(`playerData-${playerName}`, {
+		lastlastUpdatedAt: Date.now(),
 		accountId: cleanResponse.id,
 		...cleanResponse.attributes,
 		matches: cleanResponse.relationships.matches.data
@@ -66,9 +93,7 @@ app.get("/player", async (req, res) => {
 	}
 })
 
-function differenceMinutes(timeA, timeB) {
-	return (timeA - timeB) / 60000
-}
+
 
 app.get("/matches", async (req, res) => {
 	try {
@@ -156,7 +181,7 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 		console.log('bulk player stats error', error)
 	}
 })
-//relationships.player.data.id
+
 async function getAccountList(matchId) {
 	let splicedList = [];
 	query = `https://api.pubg.com/shards/steam/matches/${matchId}`;
