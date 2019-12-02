@@ -73,7 +73,7 @@ async function individualPlayer(playerName) {
 		}
 	})
 	let cleanResponse = response.data.data[0]
-	
+
 	store.set(`playerData-${playerName}`, {
 		lastlastUpdatedAt: Date.now(),
 		accountId: cleanResponse.id,
@@ -142,6 +142,11 @@ app.get("/matches", async (req, res) => {
 app.get("/allPlayerStatsFromMatch", async (req, res) => {
 	try {
 		let storeData = store.get(`playerData-${req.query.playerName}`)
+		let dataExists = store.get(req.query.matchId)
+		if (dataExists && dataExists.data) {
+			res.send(dataExists)
+
+		}
 		let accountList = await getAccountList(req.query.matchId)
 		let data = [],
 			accountIdList = []
@@ -171,10 +176,10 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 						...playerStats,
 						kd: playerStats.kills/playerStats.roundsPlayed || 0
 					},
-					playerIds: data.relationships.player.data.id
+					playerId: data.relationships.player.data.id
 			})
 		})
-		store.set('qwer', {data, accountList})
+		store.set(req.query.matchId, {data, accountList})
 		res.setHeader("Content-Type", "application/vnd.api+json")
 		res.send({data, accountList})
 	} catch (error) {
