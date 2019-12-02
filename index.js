@@ -156,7 +156,7 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 					Accept: "application/vnd.api+json",
 					Authorization: `Bearer ${process.env.apikey}`
 				},
-				validateStatus: function (status) {
+				validateStatus: (status) => {
 					return (status >= 200 && status <= 300) || status == 429 // default
 				}
 			})
@@ -169,7 +169,7 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 				players = {
 					stats: {
 						...playerStats,
-						kd: playerStats.kills/playerStats.roundsPlayed
+						kd: playerStats.kills/playerStats.roundsPlayed || 0
 					},
 					playerIds: data.relationships.player.data.id
 			})
