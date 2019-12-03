@@ -176,10 +176,11 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 							...playerStats,
 							kd: playerStats.kills/playerStats.roundsPlayed || 0
 						},
-						playerId: data.relationships.player.data.id
+						playerId: data.relationships.player.data.id,
+						playerName: accountList[data.relationships.player.data.id]
 				})
 			})
-			store.set(req.query.matchId, {data, accountList})
+			store.set(req.query.matchId, {data})
 			res.setHeader("Content-Type", "application/vnd.api+json")
 			res.send({data, accountList})
 		}
