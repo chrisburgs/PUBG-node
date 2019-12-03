@@ -143,45 +143,46 @@ app.get("/allPlayerStatsFromMatch", async (req, res) => {
 	try {
 		let storeData = store.get(`playerData-${req.query.playerName}`)
 		let dataExists = store.get(req.query.matchId)
-		if (dataExists && dataExists.data) {
-			res.send(dataExists)
-
-		}
-		let accountList = await getAccountList(req.query.matchId)
-		let data = [],
-			accountIdList = []
-			splicedList = []
-		let response
-		let matchesAsArray = Object.keys(accountList).forEach(key => accountIdList.push(key));
-		while (accountIdList.length)
-			splicedList.push(accountIdList.splice(0, 10).join("%2C"))
-		for (query of splicedList) {
-			response = await axios.get(`https://api.pubg.com/shards/steam/seasons/${req.query.season}/gameMode/${req.query.gameMode}/players?filter[playerIds]=${query}`, {
-				headers: {
-					Accept: "application/vnd.api+json",
-					Authorization: `Bearer ${process.env.apikey}`
-				},
-				validateStatus: (status) => {
-					return (status >= 200 && status <= 300) || status == 429 // default
-				}
-			})
-			response.status != 429 ? data.push(response.data.data) : null
-		}
-		data = [].concat(...data)
-		data = data.map(data => {
-			let playerStats = data.attributes.gameModeStats[req.query.gameMode]
-			return (
-				players = {
-					stats: {
-						...playerStats,
-						kd: playerStats.kills/playerStats.roundsPlayed || 0
+		console.log(dataExists && dataExists.data.length)
+		if (dataExists && dataExists.data.length) {
+			res.send(JSON.stringify(dataExists))
+		} else {
+			let accountList = await getAccountList(req.query.matchId)
+			let data = [],
+				accountIdList = []
+				splicedList = []
+			let response
+			let matchesAsArray = Object.keys(accountList).forEach(key => accountIdList.push(key));
+			while (accountIdList.length)
+				splicedList.push(accountIdList.splice(0, 10).join("%2C"))
+			for (query of splicedList) {
+				response = await axios.get(`https://api.pubg.com/shards/steam/seasons/${req.query.season}/gameMode/${req.query.gameMode}/players?filter[playerIds]=${query}`, {
+					headers: {
+						Accept: "application/vnd.api+json",
+						Authorization: `Bearer ${process.env.apikey}`
 					},
-					playerId: data.relationships.player.data.id
+					validateStatus: (status) => {
+						return (status >= 200 && status <= 300) || status == 429 // default
+					}
+				})
+				response.status != 429 ? data.push(response.data.data) : null
+			}
+			data = [].concat(...data)
+			data = data.map(data => {
+				let playerStats = data.attributes.gameModeStats[req.query.gameMode]
+				return (
+					players = {
+						stats: {
+							...playerStats,
+							kd: playerStats.kills/playerStats.roundsPlayed || 0
+						},
+						playerId: data.relationships.player.data.id
+				})
 			})
-		})
-		store.set(req.query.matchId, {data, accountList})
-		res.setHeader("Content-Type", "application/vnd.api+json")
-		res.send({data, accountList})
+			store.set(req.query.matchId, {data, accountList})
+			res.setHeader("Content-Type", "application/vnd.api+json")
+			res.send({data, accountList})
+		}
 	} catch (error) {
 		console.log('bulk player stats error', error)
 	}
